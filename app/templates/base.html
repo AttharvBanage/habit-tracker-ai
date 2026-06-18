@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title or 'Habit Tracker AI' }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 20% 20%, #1e1b4b, #000);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    main {
+      flex: 1; /* Pushes footer down naturally */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .nav-glass {
+      background: rgba(15, 15, 35, 0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 25px rgba(90, 90, 255, 0.2);
+      position: fixed;
+      width: 100%;
+      z-index: 50;
+      animation: fadeDown 0.6s ease;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #c084fc, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-link {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover::after,
+    .nav-active::after {
+      width: 100%;
+    }
+
+    .nav-link:hover {
+      color: #a78bfa;
+      transform: translateY(-1px);
+    }
+
+    .xp-badge {
+      background: linear-gradient(135deg, #6366f1, #a78bfa);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+      animation: glowPulse 3s infinite ease-in-out;
+    }
+
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 8px rgba(99,102,241,0.5); }
+      50% { box-shadow: 0 0 20px rgba(167,139,250,0.9); }
+    }
+
+    footer {
+      background: linear-gradient(to right, rgba(99,102,241,0.1), rgba(167,139,250,0.1));
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      padding: 1rem 0;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+
+    footer span {
+      color: #a78bfa;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="nav-glass flex justify-between items-center px-6 py-3">
+    <h1 class="text-2xl font-bold tracking-tight gradient-text flex items-center gap-2">
+      🌙 HabitQuest <span class="text-indigo-400">AI</span>
+    </h1>
+
+    <!-- Desktop Links -->
+    <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
+      <a href="/" class="nav-link {% if request.url.path == '/' %}nav-active{% endif %}">Dashboard</a>
+      <a href="/habits" class="nav-link {% if request.url.path == '/habits' %}nav-active{% endif %}">Habits</a>
+      <a href="/analytics" class="nav-link {% if request.url.path == '/analytics' %}nav-active{% endif %}">📊 Analytics</a>
+      <a href="/predict" class="nav-link {% if request.url.path == '/predict' %}nav-active{% endif %}">🧠 AI Insights</a>
+      <a href="/challenges" class="nav-link {% if request.url.path == '/challenges' %}nav-active{% endif %}">🎯 Challenges</a>
+      <a href="/coach" class="nav-link {% if request.url.path == '/coach' %}nav-active{% endif %}">💬 AI Coach</a>
+
+      {% if user %}
+      <div class="flex items-center gap-3">
+        <div class="text-gray-300 text-sm">👋 {{ user.name or user.email.split('@')[0] }}</div>
+        <div class="px-3 py-1 rounded-lg text-xs xp-badge text-white font-semibold">
+          ⚡ XP: {{ xp_data.xp if xp_data else 0 }} · Lvl {{ xp_data.level if xp_data else 1 }}
+        </div>
+        <a href="/logout" class="neon-border px-3 py-1.5 rounded-lg text-sm bg-white/10 hover:bg-red-600/50">Logout</a>
+      </div>
+      {% else %}
+      <div class="flex items-center gap-4">
+        <a href="/login" class="nav-link {% if request.url.path == '/login' %}nav-active{% endif %}">Login</a>
+        <a href="/register" class="nav-link {% if request.url.path == '/register' %}nav-active{% endif %}">Register</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="md:hidden flex items-center">
+      <button id="menu-btn" class="text-2xl focus:outline-none hover:text-indigo-300">☰</button>
+    </div>
+  </nav>
+
+  <!-- Mobile Dropdown -->
+  <div id="mobile-menu" class="hidden fixed top-16 left-0 w-full bg-[#0a0a1a]/95 backdrop-blur-md border-t border-white/10 py-6 space-y-4 text-center text-sm font-medium z-40">
+    <a href="/" class="block nav-link">Dashboard</a>
+    <a href="/h" class="block nav-link">Habits</a>
+    <a href="/analytics" class="block nav-link">📊 Analytics</a>
+    <a href="/predict" class="block nav-link">🧠 AI Insights</a>
+    <a href="/challenges" class="block nav-link">🎯 Challenges</a>
+    <a href="/coach" class="block nav-link {% if request.url.path == '/coach' %}nav-active{% endif %}">💬 AI Coach</a>
+
+    {% if user %}
+      <div class="pt-2 text-gray-300">👋 {{ user.name or user.email.split('@')[0] }}</div>
+      <a href="/logout" class="block text-red-400 hover:text-red-300">Logout</a>
+    {% else %}
+      <a href="/login" class="block nav-link">Login</a>
+      <a href="/register" class="block nav-link">Register</a>
+    {% endif %}
+  </div>
+
+  <!-- Main -->
+  <main class="pt-24 max-w-5xl mx-auto p-6 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    Made by <span>Team TYIT12</span> · 2025
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const menuBtn = document.getElementById("menu-btn");
+    const mobileMenu = document.getElementById("mobile-menu");
+    menuBtn.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
+    });
+  </script>
+</body>
+</html>

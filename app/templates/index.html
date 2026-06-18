@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="text-center mb-12">
+  <h2 class="text-4xl font-extrabold gradient-text">Welcome to Habit Tracker AI 🌟</h2>
+  <p class="text-gray-300 mt-3 text-lg">Build habits. Stay consistent. Let AI guide you.</p>
+  <a href="/habits/add" class="mt-6 inline-block px-6 py-3 rounded-xl btn-primary text-white font-semibold transition-all">+ Add New Habit</a>
+</section>
+
+{% if habits %}
+<div class="grid md:grid-cols-2 gap-6">
+  {% for habit in habits %}
+  <div class="bg-glass glow-border p-6 rounded-2xl">
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="text-xl font-semibold gradient-text">{{ habit.name }}</h3>
+        <p class="text-sm text-gray-400">{{ habit.category.name if habit.category else 'No Category' }} · {{ habit.frequency_type }}</p>
+      </div>
+      <div class="space-x-2">
+        <a href="/habits/edit/{{habit.id}}" class="bg-yellow-400/90 text-black px-3 py-1.5 rounded-lg text-sm hover:bg-yellow-300 transition">Edit</a>
+        <a href="/habits/delete/{{habit.id}}" class="bg-red-500/90 px-3 py-1.5 rounded-lg text-sm hover:bg-red-400 transition">Delete</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center opacity-70 mt-10 text-lg">
+  <p>No habits yet 😔</p>
+  <p class="mt-2">Start your first one now!</p>
+</div>
+{% endif %}
+{% endblock %}

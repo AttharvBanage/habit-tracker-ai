@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h2 class="text-3xl font-bold gradient-text mb-4">{{ habit.name }} Progress</h2>
+
+  <div class="bg-glass p-6 rounded-2xl glow-border mb-6">
+    {% if streak %}
+    <div class="flex justify-between text-center">
+      <div>
+        <p class="text-lg font-semibold text-indigo-400">🔥 Current Streak</p>
+        <p class="text-3xl font-bold">{{ streak.current_streak }} days</p>
+      </div>
+      <div>
+        <p class="text-lg font-semibold text-indigo-400">🏆 Best Streak</p>
+        <p class="text-3xl font-bold">{{ streak.best_streak }} days</p>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-gray-400 text-center">No progress yet.</p>
+    {% endif %}
+  </div>
+
+  <h3 class="text-xl font-semibold mb-3">📅 Completion Calendar</h3>
+  <div class="grid grid-cols-7 gap-2 text-center text-sm">
+    {% for d in days %}
+    <div class="w-10 h-10 bg-indigo-500/60 rounded-lg flex items-center justify-center text-white">{{ loop.index }}</div>
+    {% endfor %}
+  </div>
+
+  <a href="/habits" class="inline-block mt-8 px-5 py-2.5 btn-primary rounded-xl">← Back to Habits</a>
+</div>
+{% endblock %}

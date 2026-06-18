@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex justify-center items-center min-h-[70vh]">
+  <div class="bg-glass glow-border p-10 rounded-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold mb-6 gradient-text text-center">{{ 'Register' if mode=='register' else 'Login' }}</h2>
+
+    <form method="post" class="space-y-5">
+      {% if mode=='register' %}
+      <input type="text" name="name" placeholder="Name"
+        class="w-full p-3 rounded-lg bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+      {% endif %}
+
+      <input type="email" name="email" placeholder="Email"
+        class="w-full p-3 rounded-lg bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+
+      <input type="password" name="password" placeholder="Password"
+        class="w-full p-3 rounded-lg bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+
+      <button type="submit" class="w-full py-3 btn-primary rounded-lg font-semibold text-lg">{{ 'Register' if mode=='register' else 'Login' }}</button>
+    </form>
+
+    {% if error %}
+    <p class="text-red-400 mt-3 text-center">{{ error }}</p>
+    {% endif %}
+
+    <div class="mt-6 text-center text-sm text-gray-300">
+      {% if mode=='login' %}
+      No account? <a href="/register" class="text-indigo-400 hover:underline">Register</a>
+      {% else %}
+      Have an account? <a href="/login" class="text-indigo-400 hover:underline">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

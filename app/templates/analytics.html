@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <h2 class="text-4xl font-bold gradient-text mb-8 text-center">📊 AI Consistency Dashboard</h2>
+
+  {% if analytics %}
+  <div class="grid gap-8">
+    {% for data in analytics %}
+    <div class="bg-glass glow-border p-6 rounded-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-2xl font-semibold gradient-text">{{ data.habit }}</h3>
+        <span class="text-3xl font-bold text-indigo-400">{{ data.score }} / 100</span>
+      </div>
+      <div class="flex justify-between text-gray-300 text-sm mb-2">
+        <p>🔥 Current Streak: <span class="text-indigo-300 font-semibold">{{ data.streak }}</span> days</p>
+        <p>🏆 Best Streak: <span class="text-indigo-300 font-semibold">{{ data.best_streak }}</span> days</p>
+        <p>📅 Completion: <span class="text-indigo-300 font-semibold">{{ data.completion }}%</span></p>
+      </div>
+      <p class="text-gray-200 mt-3 text-lg italic">{{ data.insight }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="bg-glass glow-border p-8 mt-10 rounded-2xl">
+    <h3 class="text-2xl mb-4 text-center font-semibold gradient-text">📈 Consistency Overview</h3>
+    <canvas id="consistencyChart" height="120"></canvas>
+  </div>
+  {% else %}
+  <p class="text-center text-gray-400 mt-10">No analytics data yet. Add habits and log progress!</p>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const analytics = {{ analytics | tojson }};
+  const labels = analytics.map(a => a.habit);
+  const scores = analytics.map(a => a.score);
+
+  if (analytics.length > 0) {
+    new Chart(document.getElementById('consistencyChart'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'AI Consistency Score',
+          data: scores,
+          borderRadius: 8,
+          backgroundColor: scores.map(s =>
+            s > 80 ? 'rgba(99,102,241,0.9)' :
+            s > 60 ? 'rgba(147,197,253,0.9)' :
+            s > 40 ? 'rgba(251,191,36,0.9)' :
+                     'rgba(239,68,68,0.9)'
+          ),
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `Score: ${ctx.parsed.y}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: 'rgba(255,255,255,0.8)' },
+            grid: { display: false }
+          },
+          y: {
+            ticks: { color: 'rgba(255,255,255,0.6)' },
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            max: 100
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .habit-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+  }
+  .habit-card:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 18px rgba(99, 102, 241, 0.3);
+  }
+  .welcome-box {
+    background: linear-gradient(135deg, rgba(129,140,248,0.15), rgba(236,72,153,0.1));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.2);
+  }
+  .voice-section {
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 4rem 1rem 2rem;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(99,102,241,0.25);
+  }
+  .quote {
+    font-style: italic;
+    color: #c7d2fe;
+    margin-top: 0.5rem;
+  }
+</style>
+
+<!-- 🌙 Welcome Section -->
+<div class="welcome-box mt-4">
+  <h1 class="text-4xl font-bold gradient-text">
+    👋 Welcome back, {{ user.name or user.email.split('@')[0] }}!
+  </h1>
+  <p class="text-gray-300 mt-2 text-lg">Let’s make today a productive day.</p>
+  <p class="quote">“Discipline is the bridge between goals and success.”</p>
+</div>
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-10 px-4">
+  <h2 class="text-3xl font-bold gradient-text">Your Habits</h2>
+  <a href="/habits/add"
+     class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-md">
+     + Add Habit
+  </a>
+</div>
+
+<!-- Habits Grid -->
+{% if habits %}
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10 px-4">
+  {% for habit in habits %}
+  <div class="habit-card p-6 rounded-2xl relative">
+    <div class="absolute top-3 right-3 text-xs px-3 py-1 rounded-full bg-indigo-500/30 border border-indigo-400/20">
+
+    </div>
+
+    <h3 class="text-xl font-semibold">{{ habit.name }}</h3>
+    <p class="text-sm text-gray-400 mt-1">
+      {{ habit.category.name if habit.category else '' }}
+    </p>
+
+    <div class="mt-5 flex flex-wrap gap-3">
+      {% if habit.id in completed_today %}
+        <button class="px-4 py-2 rounded-lg bg-gray-600 cursor-not-allowed text-white text-sm font-semibold flex items-center gap-1 transition">
+          ✔ Done Today
+        </button>
+      {% else %}
+        <form action="/habits/{{habit.id}}/complete" method="post">
+          <button class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white text-sm font-semibold flex items-center gap-1 transition hover:scale-105">
+            <span>✔</span> Mark Done
+          </button>
+        </form>
+      {% endif %}
+
+      <a href="/habits/{{habit.id}}/progress"
+         class="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-semibold transition">
+         📊 View Progress
+      </a>
+
+      <a href="/pathway/{{habit.id}}"
+         class="px-4 py-2 rounded-lg bg-pink-500 hover:bg-pink-400 text-white text-sm font-semibold transition">
+         🧭 AI Pathway
+      </a>
+
+      <a href="/habits/edit/{{habit.id}}"
+         class="px-4 py-2 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-300 transition">
+         ✏️ Edit
+      </a>
+
+      <a href="/habits/delete/{{habit.id}}"
+         class="px-4 py-2 rounded-lg bg-red-500 text-sm font-semibold hover:bg-red-400 transition">
+         🗑️ Delete
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col justify-center items-center text-center text-gray-400 text-lg mt-24 h-[50vh] px-4">
+  <p>No habits yet. Add one to start your journey 🚀</p>
+  <a href="/habits/add"
+     class="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-semibold shadow-md transition">
+     ➕ Add Your First Habit
+  </a>
+</div>
+{% endif %}
+
+<!-- 🎙️ Voice Command Habit Logging -->
+<div class="voice-section mx-4">
+  <h3 class="text-lg font-semibold text-indigo-300 mb-3">🎙️ Voice Command Habit Logging</h3>
+  <p class="text-gray-400 mb-4">Say things like “Mark reading as done” or “I completed meditation”.</p>
+  <button id="listen-btn" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold shadow-md transition">
+    🎤 Start Listening
+  </button>
+  <p id="voice-status" class="text-sm text-gray-300 mt-3 italic"></p>
+</div>
+
+<!-- 🎙️ Voice Script -->
+<script>
+  const listenBtn = document.getElementById("listen-btn");
+  const statusEl = document.getElementById("voice-status");
+
+  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => statusEl.textContent = "🎧 Listening...";
+    recognition.onend = () => statusEl.textContent = "✅ Done listening.";
+    recognition.onerror = (event) => statusEl.textContent = "❌ Error: " + event.error;
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      statusEl.textContent = "🧠 Processing: " + transcript;
+
+      const formData = new FormData();
+      formData.append("command", transcript);
+
+      const response = await fetch("/voice/log", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      statusEl.textContent = data.message;
+
+      const reply = new SpeechSynthesisUtterance(data.message);
+      reply.lang = "en-IN";
+      speechSynthesis.speak(reply);
+    };
+
+    listenBtn.addEventListener("click", () => recognition.start());
+  } else {
+    statusEl.textContent = "🎤 Voice recognition not supported in this browser.";
+  }
+</script>
+{% endblock %}

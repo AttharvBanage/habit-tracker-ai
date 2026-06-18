@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-10">
+    <h2 class="text-3xl font-bold gradient-text">🎯 Adaptive Challenges</h2>
+    <form action="/challenges/generate" method="post">
+      <button
+        class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-md hover:shadow-lg">
+        ⚙️ Generate This Week
+      </button>
+    </form>
+  </div>
+
+  <!-- Challenges Grid -->
+  {% if challenges %}
+  <div class="grid md:grid-cols-2 gap-6">
+    {% for c in challenges %}
+    <div class="bg-glass glow-border p-6 rounded-2xl border border-white/10 backdrop-blur-md transition hover:scale-[1.01] hover:shadow-lg">
+
+      <!-- Top Section -->
+      <div class="flex justify-between items-start">
+        <div>
+          <h3 class="text-xl font-semibold text-indigo-200">{{ c.title }}</h3>
+          <p class="text-sm text-gray-300 mt-1">{{ c.description }}</p>
+          <p class="text-xs text-gray-400 mt-1">
+            {{ c.start_date }} → {{ c.end_date }} · Target: {{ c.target_days }} days
+          </p>
+        </div>
+
+        <!-- Status Badge -->
+        <span class="text-xs px-3 py-1 rounded-full font-medium capitalize
+          {% if c.status == 'active' %}
+            bg-emerald-500/20 border border-emerald-400/40 text-emerald-300
+          {% elif c.status == 'pending' %}
+            bg-yellow-500/20 border border-yellow-400/40 text-yellow-300
+          {% elif c.status == 'completed' %}
+            bg-indigo-500/20 border border-indigo-400/40 text-indigo-300
+          {% elif c.status == 'expired' %}
+            bg-gray-500/20 border border-gray-400/40 text-gray-300
+          {% else %}
+            bg-slate-600/20 border border-slate-400/40 text-slate-300
+          {% endif %}
+        ">
+          {{ c.status }}
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="mt-4">
+        <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+          <div class="h-3 rounded-full transition-all duration-500 ease-out"
+               style="width: {{ (c.completed_days / c.target_days) * 100 if c.target_days else 0 }}%;
+                      background: linear-gradient(90deg, #7c3aed, #60a5fa);">
+          </div>
+        </div>
+        <p class="text-sm text-gray-300 mt-2">
+          Progress: {{ c.completed_days }}/{{ c.target_days }}
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-6 flex flex-wrap gap-3">
+        {% if c.status == 'pending' %}
+        <form action="/challenges/accept/{{ c.id }}" method="post">
+          <button
+            class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition-all">
+            ⚡ Accept
+          </button>
+        </form>
+        {% endif %}
+
+        {% if c.status in ['pending', 'active'] %}
+        <form action="/challenges/mark/{{ c.id }}" method="post">
+          <button
+            class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white font-semibold transition-all">
+            ✅ Mark Today
+          </button>
+        </form>
+        {% endif %}
+
+        {% if c.status == 'completed' %}
+        <span
+          class="px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold animate-pulse shadow-md">
+          🎉 Completed · +{{ c.bonus_xp }} XP
+        </span>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="text-center text-gray-400 text-lg mt-16">
+    😴 No challenges yet.<br>
+    <span class="text-indigo-400">Click “Generate This Week” to start your journey!</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-10">
+  <h2 class="text-3xl font-bold gradient-text">💬 Your AI Coach</h2>
+
+  <!-- AI Summary Card -->
+  <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/10 shadow-lg hover:shadow-indigo-500/30 transition">
+    <p class="text-gray-300 mb-3">{{ ai_data.summary }}</p>
+    <h3 class="text-xl font-semibold text-indigo-300 mb-2">{{ ai_data.insight }}</h3>
+    <p class="text-sm text-gray-400 italic">{{ ai_data.suggestion }}</p>
+  </div>
+
+  <!-- Chart Card -->
+  <div class="bg-white/5 rounded-xl p-6 border border-white/10">
+    <h3 class="text-lg font-semibold mb-3 text-indigo-300">📈 Weekly Progress</h3>
+    <canvas id="progressChart" height="120"></canvas>
+  </div>
+
+  <!-- Quote Card -->
+  <div class="bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-400/20 rounded-xl p-6 text-center">
+    <p id="coach-quote" class="text-lg font-medium text-indigo-200">"{{ ai_data.quote }}"</p>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex justify-center gap-4 mt-8">
+    <button id="speak-btn" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold shadow-md transition">🎧 Coach Speaks</button>
+    <a href="/habits" class="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white font-semibold shadow-md transition">
+      🪄 Go Practice Your Habits
+    </a>
+  </div>
+
+  <!-- Voice Command Section -->
+  <div class="bg-indigo-600/20 border border-indigo-500/30 rounded-xl p-6 mt-10 text-center">
+    <h3 class="text-lg font-semibold text-indigo-300 mb-3">🎙️ Voice Command Habit Logging</h3>
+    <p class="text-gray-400 mb-4">Say things like “Mark reading as done” or “I completed meditation”.</p>
+    <button id="listen-btn" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold shadow-md transition">
+      🎤 Start Listening
+    </button>
+    <p id="voice-status" class="text-sm text-gray-300 mt-3 italic"></p>
+    <p id="live-transcript" class="text-md text-indigo-200 mt-2"></p>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // --- Weekly chart ---
+  const ctx = document.getElementById('progressChart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ chart_labels|tojson }},
+      datasets: [{
+        label: 'Completed Habits',
+        data: {{ chart_values|tojson }},
+        backgroundColor: 'rgba(129, 140, 248, 0.6)',
+        borderColor: '#818CF8',
+        borderWidth: 1,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#c7d2fe' }, grid: { color: '#1f2937' } },
+        x: { ticks: { color: '#a5b4fc' }, grid: { color: '#1f2937' } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // --- Coach speaks ---
+  document.getElementById('speak-btn').addEventListener('click', () => {
+    const text = "{{ ai_data.insight }} {{ ai_data.quote }}";
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-IN';
+    utter.pitch = 1.1;
+    utter.rate = 1.0;
+    utter.voice = window.speechSynthesis.getVoices().find(v => v.lang.includes('en')) || null;
+    speechSynthesis.speak(utter);
+  });
+
+  // --- Voice Command Recognition ---
+  const listenBtn = document.getElementById("listen-btn");
+  const statusEl = document.getElementById("voice-status");
+  const transcriptEl = document.getElementById("live-transcript");
+
+  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let listening = false;
+    let userStopped = false;
+
+    recognition.onstart = () => {
+      statusEl.textContent = "🎧 Listening...";
+      listenBtn.textContent = "🛑 Stop Listening";
+    };
+
+    recognition.onend = () => {
+      if (!userStopped) {
+        // Auto-restart if ended unexpectedly
+        console.log("Restarting recognition...");
+        statusEl.textContent = "⏳ Restarting listener...";
+        setTimeout(() => recognition.start(), 300);
+      } else {
+        statusEl.textContent = "🛑 Listening stopped.";
+        listenBtn.textContent = "🎤 Start Listening";
+      }
+    };
+
+    recognition.onerror = (event) => {
+      statusEl.textContent = "❌ Error: " + event.error;
+      console.error("Speech recognition error:", event);
+      if (event.error === "no-speech" && !userStopped) {
+        setTimeout(() => recognition.start(), 500);
+      }
+    };
+
+    recognition.onresult = async (event) => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      transcriptEl.textContent = "🗣️ " + transcript;
+
+      if (event.results[event.results.length - 1].isFinal) {
+        statusEl.textContent = "🧠 Processing: " + transcript;
+
+        const formData = new FormData();
+        formData.append("command", transcript);
+
+        try {
+          const response = await fetch("/voice/log", { method: "POST", body: formData });
+          const data = await response.json();
+          statusEl.textContent = data.message;
+
+          const reply = new SpeechSynthesisUtterance(data.message);
+          reply.lang = "en-IN";
+          speechSynthesis.speak(reply);
+        } catch (err) {
+          statusEl.textContent = "❌ Server error: " + err.message;
+        }
+      }
+    };
+
+    listenBtn.addEventListener("click", () => {
+      if (!listening) {
+        recognition.start();
+        listening = true;
+        userStopped = false;
+      } else {
+        userStopped = true;
+        recognition.stop();
+        listening = false;
+      }
+    });
+  } else {
+    statusEl.textContent = "🎤 Voice recognition not supported in this browser.";
+  }
+</script>
+
+{% endblock %}

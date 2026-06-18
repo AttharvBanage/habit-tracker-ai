@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <h2 class="text-4xl font-bold gradient-text mb-8 text-center">🧠 Predictive Behaviour Engine</h2>
+
+  {% if predictions %}
+  <div class="grid gap-8">
+    {% for data in predictions %}
+    <div class="bg-glass glow-border p-6 rounded-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-2xl font-semibold">{{ data.habit }}</h3>
+        <span class="text-lg text-gray-400">Risk: {{ data.risk | round(1) }}%</span>
+      </div>
+
+      <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden mb-4">
+        <div class="h-3 rounded-full transition-all duration-700"
+             style="width: {{ data.prob }}%; background:
+             linear-gradient(90deg,
+             {% if data.prob >= 80 %}
+               #22c55e
+             {% elif data.prob >= 60 %}
+               #facc15
+             {% elif data.prob >= 40 %}
+               #fb923c
+             {% else %}
+               #ef4444
+             {% endif %}
+             , rgba(255,255,255,0.2));">
+        </div>
+      </div>
+
+      <p class="text-lg text-gray-200">{{ data.message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="bg-glass glow-border p-8 mt-10 rounded-2xl text-center">
+    <h3 class="text-2xl mb-4 font-semibold gradient-text">📊 AI Prediction Summary</h3>
+    <canvas id="predictChart" height="120"></canvas>
+  </div>
+  {% else %}
+  <p class="text-center text-gray-400 mt-10">No habits found to predict.</p>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const predictions = {{ predictions | tojson }};
+  const labels = predictions.map(p => p.habit);
+  const data = predictions.map(p => p.prob);
+
+  if (predictions.length > 0) {
+    new Chart(document.getElementById('predictChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Predicted Completion Probability (%)',
+          data: data,
+          borderColor: 'rgba(99,102,241,1)',
+          backgroundColor: 'rgba(99,102,241,0.3)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: data.map(v =>
+            v >= 80 ? '#22c55e' :
+            v >= 60 ? '#facc15' :
+            v >= 40 ? '#fb923c' : '#ef4444'
+          )
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.y}% chance to complete` } }
+        },
+        scales: {
+          x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { display: false } },
+          y: { ticks: { color: 'rgba(255,255,255,0.6)' }, max: 100 }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

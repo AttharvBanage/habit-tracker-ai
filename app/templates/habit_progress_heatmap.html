@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h2 class="text-3xl font-bold gradient-text mb-4">{{ habit.name }} Progress</h2>
+
+  <div class="bg-glass glow-border p-6 rounded-2xl mb-8">
+    {% if streak %}
+    <div class="flex justify-between text-center mb-6">
+      <div>
+        <p class="text-lg font-semibold text-indigo-400">🔥 Current Streak</p>
+        <p class="text-3xl font-bold">{{ streak.current_streak }} days</p>
+      </div>
+      <div>
+        <p class="text-lg font-semibold text-indigo-400">🏆 Best Streak</p>
+        <p class="text-3xl font-bold">{{ streak.best_streak }} days</p>
+      </div>
+      <div>
+        <p class="text-lg font-semibold text-indigo-400">📈 Completion</p>
+        <p class="text-3xl font-bold">{{ completion_rate }}%</p>
+      </div>
+    </div>
+    {% endif %}
+    <p class="text-gray-300 text-center text-lg italic">{{ insight }}</p>
+  </div>
+
+  <h3 class="text-xl font-semibold mb-4 text-center">📅 60-Day Heatmap</h3>
+  <canvas id="heatmapChart" height="200"></canvas>
+
+  <div class="text-center mt-10">
+    <a href="/habits" class="px-5 py-2.5 btn-primary rounded-xl">← Back to Habits</a>
+  </div>
+</div>
+
+<script>
+const ctx = document.getElementById('heatmapChart').getContext('2d');
+const heatmapData = {{ heatmap_data | tojson }};
+const labels = heatmapData.map(d => d.date);
+const values = heatmapData.map(d => d.value);
+
+const bgColors = values.map(v => {
+  if (v === 1) return 'rgba(99,102,241,0.9)'; // completed
+  return 'rgba(255,255,255,0.08)';             // missed
+});
+
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      data: values,
+      backgroundColor: bgColors,
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.parsed.y === 1 ? '✅ Completed' : '❌ Missed'
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: 'rgba(255,255,255,0.6)',
+          callback: function (val, idx) {
+            // show only every 5th day label for readability
+            return idx % 5 === 0 ? this.getLabelForValue(val).slice(5) : '';
+          }
+        }
+      },
+      y: {
+        display: false,
+        max: 1
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

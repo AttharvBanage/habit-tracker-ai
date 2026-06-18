@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h2 class="text-3xl font-bold gradient-text mb-6">
+    🧭 AI Pathway: {{ habit.name }}
+  </h2>
+  <p class="text-gray-300 mb-6 text-center">
+    Personalized 21-Day Roadmap to Master Your Habit
+  </p>
+  <div class="grid md:grid-cols-2 gap-6">
+    {% for step in plan %}
+    <div class="bg-glass glow-border p-4 rounded-xl transition hover:scale-105">
+      <div class="flex justify-between mb-1">
+        <span class="font-semibold text-indigo-300">Day {{ step.day }}</span>
+        <span>{{ step.effort }}</span>
+      </div>
+      <p class="text-white font-medium">{{ step.task }}</p>
+      <p class="text-gray-400 text-sm italic mt-2">{{ step.motivation }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="text-center mt-10">
+    <a href="/habits" class="btn-primary px-5 py-2.5 rounded-xl">← Back to Habits</a>
+  </div>
+</div>
+{% endblock %}
