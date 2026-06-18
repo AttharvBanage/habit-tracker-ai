@@ -123,7 +123,7 @@ Designed to encourage long-term engagement through:
 | Frontend | HTML, CSS, JavaScript |
 | Backend | FastAPI, Python |
 | Database | MySQL, Supabase |
-| AI Layer | NLP, Predictive Analytics, Recommendation Engine |
+| AI Layer | NLP, Predictive Analytics, Recommendation Engine, JINJA2 |
 
 ---
 
