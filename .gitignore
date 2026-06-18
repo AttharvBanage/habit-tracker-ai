@@ -1,14 +1,5 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-
-# Virtual Environment
 venv/
-.env
-
-# PyCharm
 .idea/
-
-# Logs
-*.log
+__pycache__/
+.env
+*.pyc
